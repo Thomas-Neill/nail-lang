@@ -11,5 +11,6 @@ typedef struct Token {
 	void* value;
 } Token;
 
-list parse(char* text);
+list tokenize(char* text);
 char* textify_token(Token* tk);
+void free_tokens(list l);

@@ -30,7 +30,7 @@ void delWith(list l,void(*fn)(void*)) {
   fn(l->head);
   //delete the remainder's contents
   delWith(l->tail,fn);
-  //delete the pointer to it.
+  //delete the leftovers
   free(l);
 }
 

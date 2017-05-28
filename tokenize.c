@@ -1,4 +1,4 @@
-#include "parse.h"
+#include "tokenize.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
@@ -25,7 +25,7 @@ void reset_state() {
   tokens = NULL;
 }
 
-list parse(char* text_) {
+list tokenize(char* text_) {
   reset_state();
   text = text_;
   while(location < strlen(text)) munch_token();
@@ -53,11 +53,16 @@ static void munch_token() {
   } else if(accept("\"")) {
     //TODO: add string escapes, and single-quoted strings
     while(Naccept("\"\0"));
-    if(peek() == '\0') { printf("Error: unterminated string literal!\n"); exit(1); }
+    if(peek() == '\0') {
+      printf("Error: unterminated string literal!\n");
+      free_tokens(tokens);
+      exit(1);
+    }
     accept("\"");
     push(TK_STR);
   } else {
     printf("Bad char: '%c'.\n",peek());
+    free_tokens(tokens);
     exit(1);
 }
 }
@@ -90,7 +95,7 @@ static void push(TK_TYPE t) {
       sscanf(new->text,"%f",newF);
       new->value = newF;
       break;
-    case TK_SYM:  
+    case TK_SYM:
       new->value = malloc(strlen(new->text) + 1);
       strcpy(new->value,new->text);
       break;
@@ -158,8 +163,14 @@ void free_token(void *x) {
 void free_tokens(list l) {
   delWith(l,free_token);
 }
+
 int main() {
-  list result = parse("9 0( )## (\"hi\") )) # # ");
-  print_tokens(result);
-  free_tokens(result);
+  char buffer[100];
+  while(true) {
+    printf("test> ");
+    fgets(buffer,100,stdin);
+    list result = tokenize(buffer);
+    print_tokens(result);
+    free_tokens(result);
+  }
 }
