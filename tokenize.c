@@ -16,7 +16,7 @@ static void munch_token();
 //global state
 int location = 0;
 int width = 0;
-char* text = NULL;
+const char* text = NULL;
 list tokens = NULL;
 
 void reset_state() {
@@ -25,7 +25,7 @@ void reset_state() {
   tokens = NULL;
 }
 
-list tokenize(char* text_) {
+list tokenize(const char* text_) {
   reset_state();
   text = text_;
   while(location < strlen(text)) munch_token();
@@ -45,8 +45,10 @@ static void munch_token() {
   } else if(accept("0123456789")) {
     while(accept("0123456789."));
     push(TK_NUM);
-  } else if(strchr("\n\t ",peek())) {
-    while(strchr("\n\t ",peek())) location++;
+  } else if(accept("\n\t ")) {
+    while(accept("\n\t ")) ;
+    location += width;
+    width = 0;
   } else if(Naccept("\"0123456789")) {
     while(Naccept("\"0123456789 \t\n()#"));
     push(TK_SYM);
@@ -163,7 +165,7 @@ void free_token(void *x) {
 void free_tokens(list l) {
   delWith(l,free_token);
 }
-
+/*
 int main() {
   char buffer[100];
   while(true) {
@@ -173,4 +175,4 @@ int main() {
     print_tokens(result);
     free_tokens(result);
   }
-}
+}*/
