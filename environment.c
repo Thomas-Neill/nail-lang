@@ -33,9 +33,3 @@ static void freeKV(void* kv) {
 void free_env(Environment e) {
   delWith(e,freeKV);
 }
-int main() {
-  Environment test = NULL;
-  (*get("foo",&test)) = new_num(5);
-  out_nObj(*get("foo",&test));
-  free_env(test);
-}

@@ -5,10 +5,15 @@
 #include "stdio.h"
 
 int current = 0;
+int unterminated_parens = 0;
 
 nObj parse(list tokens) {
   if(current == length(tokens)) {
-    current = 0; 
+    current = 0;
+    if(unterminated_parens) {
+      puts("Parse error: unterminated parens");
+      exit(1);
+    }
     return NULL;
   }
   nObj result = malloc(sizeof(struct nailObject));
@@ -20,10 +25,12 @@ nObj parse(list tokens) {
       return parse(tokens);
     case TK_LPAREN:
       result->type = LIST;
+      unterminated_parens++;
       result->typedata.head = parse(tokens);
       break;
     case TK_RPAREN:
       free(result);
+      unterminated_parens--;
       return NULL;
     case TK_STR:
       result->type = STR;
@@ -41,7 +48,7 @@ nObj parse(list tokens) {
   result->next = parse(tokens);
   return result;
 }
-
+/*
 int main() {
   char buffer[100] = "";
   while(1) {
@@ -53,4 +60,4 @@ int main() {
     free_tokens(tokens);
     free_nObj(result);
   }
-}
+}*/

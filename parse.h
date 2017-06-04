@@ -1,6 +1,6 @@
 #pragma once
 
-#include "tokenizer.h"
+#include "tokenize.h"
 #include "object.h"
 
 nObj parse(list tokens);

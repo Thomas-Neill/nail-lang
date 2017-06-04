@@ -7,6 +7,7 @@
 
 nObj new_str(const char* c) {
   nObj result = EMPTY;
+  result->quoted = false;
   result->type = STR;
   result->typedata.strdata = strdup(c);
   result->next = NULL;
@@ -15,6 +16,7 @@ nObj new_str(const char* c) {
 
 nObj new_sym(const char* c) {
   nObj result = EMPTY;
+  result->quoted = false;
   result->type = SYM;
   result->typedata.symdata = strdup(c);
   result->next = NULL;
@@ -23,21 +25,51 @@ nObj new_sym(const char* c) {
 
 nObj new_num(float f) {
   nObj result = EMPTY;
+  result->quoted = false;
   result->type = NUM;
   result->typedata.numdata = f;
   result->next = NULL;
   return result;
 }
 
-nObj new_list(nObj* array,int length) {
-  for(int i = 0;i < length-1;i++) {
-    array[i]->next = array[i+1];
-  }
-  array[length-1]->next = NULL;
+nObj new_empty_list() {
   nObj result = EMPTY;
+  result->quoted = false;
   result->type = LIST;
-  result->typedata.head = array[0];
+  result->typedata.head = NULL;
   result->next = NULL;
+  return result;
+}
+
+nObj new_magic_func(nObj (*func)(nObj)) {
+  nObj result = EMPTY;
+  result->quoted = false;
+  result->type = MAGIC_FUNC;
+  result->typedata.magic_func = func;
+  result->next = NULL;
+  return result;
+}
+
+nObj clone(nObj n) {
+  if(!n) return NULL;
+  nObj result = EMPTY;
+  result->quoted = n->quoted;
+  result->type = n->type;
+  result->next = clone(n->next);
+  switch(n->type) {
+    case STR:
+      result->typedata.strdata = strdup(n->typedata.strdata);
+      break;
+    case SYM:
+      result->typedata.symdata = strdup(n->typedata.symdata);
+      break;
+    case LIST:
+      result->typedata.head = clone(n->typedata.head);
+      break;
+    default:
+      result->typedata = n->typedata;
+      break;
+  }
   return result;
 }
 
@@ -61,6 +93,7 @@ void free_nObj(nObj n) {
 }
 
 void out_nObj(nObj n) {
+  if(n->quoted) putchar('#');
   switch(n->type) {
     case STR:
       printf("\"%s\"",n->typedata.strdata);
@@ -76,6 +109,9 @@ void out_nObj(nObj n) {
       out_nObj(n->typedata.head);
       putchar(')');
       break;
+    case MAGIC_FUNC:
+      printf("[Magic function]");
+      break;
   }
   if(!n->next) return;
   putchar(' '); //Items are seperated by spaces
@@ -83,6 +119,7 @@ void out_nObj(nObj n) {
 }
 
 static void aux_toStr(nObj n,char* result) {
+  if(n->quoted) strcat(result,"#");
   char temp[100];
   switch(n->type) {
     case STR:
@@ -98,6 +135,9 @@ static void aux_toStr(nObj n,char* result) {
       strcat(result,"(");
       aux_toStr(n->typedata.head,result);
       strcat(result,")");
+      break;
+    case MAGIC_FUNC:
+      strcat(result,"[Magic function]");
       break;
   }
   strcat(result,temp);
