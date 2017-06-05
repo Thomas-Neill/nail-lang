@@ -5,4 +5,4 @@
 Environment global = NULL;
 
 nObj eval(nObj n);
-nObj call(nObj func,nObj input);
+nObj call(nObj list);

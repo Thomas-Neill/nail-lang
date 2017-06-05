@@ -6,36 +6,40 @@
 
 nObj eval(nObj n) {
   if(!n) return NULL;
-  if(n->quoted) return clone(n);
   nObj result;
-  switch(n->type) {
-    case LIST: ;
-      result = call(n->typedata.head,n->typedata.head->next);
-      result->next = eval(n->next);
-      break;
-    case SYM: ;
-      result = *(get(n->typedata.symdata,&global));
-      if(result == NULL) {
-        printf("Variable '%s' doesn't exist!\n",n->typedata.symdata);
-        exit(1);
-      }
-      result->next = eval(n->next);
-      break;
-    default:
-      result = clone(n);
-      free_nObj(result->next);
-      result->next = eval(n->next);
-      break;
+  if(n->quoted) {
+    result = clone(n);
+    free_nObj(result->next);
+    result->next = eval(n->next);
+    return result;
+  } else {
+    switch(n->type) {
+      case LIST: 
+        result = call(n);
+        break;
+      case SYM:
+        result = clone(*(get(n->typedata.symdata,&global)));
+        if(result == NULL) {
+          printf("Variable '%s' doesn't exist!\n",n->typedata.symdata);
+          exit(1);
+        }
+        break;
+      default:
+        result = clone(n);
+        free_nObj(result->next);
+       break;
+     } 
   }
+  result->next = eval(n->next);
   return result;
 }
 
-nObj call(nObj func,nObj input) {
-  func = eval(func);
+nObj call(nObj l) {
+  nObj func = eval(l->typedata.head);
   nObj result;
   switch(func->type) {
-    case MAGIC_FUNC:
-      input = eval(input);
+    case MAGIC_FUNC:;
+      nObj input = func->next;
       result = func->typedata.magic_func(input);
       free_nObj(input);
       break;
@@ -48,11 +52,25 @@ nObj call(nObj func,nObj input) {
 
 //BEGIN testing
 
+void set(char* c,nObj n) {
+  *(get(c,&global)) = n;
+}
+
+//TODO: actually handle errors rather than just exit(1)'ing
 nObj add(nObj inputs) {
+  if(!inputs) {
+    printf("Inputs required for '+'\n");
+    exit(1);
+  }
+  if(inputs->type != NUM) {
+      printf("Invalid type for '+' operation\n");
+      exit(1);
+  }
+  if(!inputs->next) return new_num(abs(inputs->typedata.numdata));
   float sum = 0;
   while(inputs) {
     if(inputs->type != NUM) {
-      printf("Invalid type for 'add' operation\n");
+      printf("Invalid type for '+' operation\n");
       exit(1);
     }
     sum += inputs->typedata.numdata;
@@ -61,12 +79,80 @@ nObj add(nObj inputs) {
   return new_num(sum);
 }
 
-void set(char* c,nObj n) {
-  *(get(c,&global)) = n;
+nObj sub(nObj inputs) {
+  if(!inputs) {
+    printf("Inputs required for '-'\n");
+    exit(1);
+  }
+  if(!inputs->next) return new_num(-abs(inputs->typedata.numdata));
+  if(inputs->type != NUM || inputs->next->type != NUM) {
+    printf("Invalid type for '-' operation\n");
+    exit(1);
+  }
+  return new_num(inputs->typedata.numdata-inputs->next->typedata.numdata);
+}
+
+nObj mul(nObj inputs) {
+  if(!inputs) {
+    printf("Inputs required for '*'\n");
+    exit(1);
+  }
+  float sum = 1;
+  while(inputs) {
+    if(inputs->type != NUM) {
+      out_nObj(inputs);putchar('\n');
+      printf("Invalid type for '*' operation\n");
+      exit(1);
+    }
+    sum *= inputs->typedata.numdata;
+    inputs = inputs->next;
+  }
+  return new_num(sum);
+}
+
+nObj divide(nObj inputs) {
+  if(!inputs) {
+    printf("Inputs required for '/'\n");
+    exit(1);
+  }
+  if(!inputs->next) return new_num(-abs(inputs->typedata.numdata));
+  if(inputs->type != NUM || inputs->next->type != NUM) {
+    printf("Invalid type for '/' operation\n");
+    exit(1);
+  }
+  return new_num(inputs->typedata.numdata/inputs->next->typedata.numdata);
+}
+
+nObj setsym(nObj inputs) {
+  set(inputs->typedata.symdata,clone(inputs->next));
+  return new_zilch();
+}
+
+nObj print(nObj inputs) {
+  if(inputs && !inputs->next) {
+    if(inputs->type != STR) {puts("Invalid type to print!"); exit(1);}
+    puts(inputs->typedata.strdata);
+    return new_zilch();
+  } else {
+    puts("Too many or too few args");
+    exit(1);
+  }
+}
+nObj input(nObj useless) {
+  char buffer[500];
+  fgets(buffer,500,stdin);
+  for(int i = 0; 500 > i; i++) if(buffer[i] == '\n') {buffer[i] = '\0'; break;}
+  return new_str(buffer);
 }
 int main() {
   set("+",new_magic_func(add));
-  set("foobar",new_num(5));
+  set("-",new_magic_func(sub));
+  set("*",new_magic_func(mul));
+  set("/",new_magic_func(divide));
+  set("zilch",new_zilch());
+  set("set!",new_magic_func(setsym));
+  set("print!",new_magic_func(print));
+  set("input?",new_magic_func(input));
   list tks;
   nObj ast;
   nObj result;
@@ -77,11 +163,12 @@ int main() {
     if(strncmp("quit",text,4) == 0) break;
     tks = tokenize(text);
     ast = parse(tks);
-    free_tokens(tks);
     result = eval(ast);
     out_nObj(result); putchar('\n');
+    free_tokens(tks); 
     free_nObj(result);
     free_nObj(ast);
+    text[0] = '\0';
   }
   free_env(global);
 }

@@ -41,6 +41,14 @@ nObj new_empty_list() {
   return result;
 }
 
+nObj new_zilch() {
+  nObj result = EMPTY;
+  result->quoted = false;
+  result->type = ZILCH;
+  result->next = NULL;
+  return result;
+}
+
 nObj new_magic_func(nObj (*func)(nObj)) {
   nObj result = EMPTY;
   result->quoted = false;
@@ -112,6 +120,9 @@ void out_nObj(nObj n) {
     case MAGIC_FUNC:
       printf("[Magic function]");
       break;
+    case ZILCH:
+      printf("zilch");
+      break;
   }
   if(!n->next) return;
   putchar(' '); //Items are seperated by spaces
@@ -138,6 +149,9 @@ static void aux_toStr(nObj n,char* result) {
       break;
     case MAGIC_FUNC:
       strcat(result,"[Magic function]");
+      break;
+    case ZILCH:
+      strcat(result,"zilch");
       break;
   }
   strcat(result,temp);

@@ -17,12 +17,15 @@ nObj parse(list tokens) {
     return NULL;
   }
   nObj result = malloc(sizeof(struct nailObject));
+  result->quoted = false;
   Token* head = at(tokens,current);
   current++;
   switch(head->type) {
     case TK_HASH:
       free(result);
-      return parse(tokens);
+      result = parse(tokens);
+      result->quoted = true;
+      return result;
     case TK_LPAREN:
       result->type = LIST;
       unterminated_parens++;
