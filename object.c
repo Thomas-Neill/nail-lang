@@ -58,6 +58,12 @@ nObj new_magic_func(nObj (*func)(nObj)) {
   return result;
 }
 
+nObj new_magic_macro(nObj (*func)(nObj)) {
+  nObj result = new_magic_func(func);
+  result->type = MAGIC_MACRO;
+  return result;
+}
+
 nObj clone(nObj n) {
   if(!n) return NULL;
   nObj result = EMPTY;
@@ -120,6 +126,9 @@ void out_nObj(nObj n) {
     case MAGIC_FUNC:
       printf("[Magic function]");
       break;
+    case MAGIC_MACRO:
+      printf("[Magic macro]");
+      break;
     case ZILCH:
       printf("zilch");
       break;
@@ -149,6 +158,9 @@ static void aux_toStr(nObj n,char* result) {
       break;
     case MAGIC_FUNC:
       strcat(result,"[Magic function]");
+      break;
+    case MAGIC_MACRO:
+      strcat(result,"[Magic macro]");
       break;
     case ZILCH:
       strcat(result,"zilch");

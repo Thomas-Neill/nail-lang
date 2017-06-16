@@ -10,19 +10,18 @@ nObj eval(nObj n) {
   if(n->quoted) {
     result = clone(n);
     free_nObj(result->next);
-    result->next = eval(n->next);
-    return result;
   } else {
     switch(n->type) {
       case LIST: 
         result = call(n);
         break;
       case SYM:
-        result = clone(*(get(n->typedata.symdata,&global)));
+        result = clone(*(get(n->typedata.symdata,scope)));
         if(result == NULL) {
           printf("Variable '%s' doesn't exist!\n",n->typedata.symdata);
           exit(1);
         }
+        free_nObj(result->next);
         break;
       default:
         result = clone(n);
@@ -35,25 +34,39 @@ nObj eval(nObj n) {
 }
 
 nObj call(nObj l) {
-  nObj func = eval(l->typedata.head);
+  //just evaluate the head!!!
+  nObj copy = clone(l);
+  nObj temp = copy->typedata.head->next;
+  copy->typedata.head->next = NULL;
+  nObj func = eval(copy->typedata.head);
+  copy->typedata.head->next = temp;
+  free_nObj(copy);
+  
+  nObj inputs = l->typedata.head->next;
   nObj result;
   switch(func->type) {
     case MAGIC_FUNC:;
-      nObj input = func->next;
-      result = func->typedata.magic_func(input);
-      free_nObj(input);
+      nObj temp = eval(inputs);
+      result = func->typedata.magic_func(temp);
+      free_nObj(temp);
+      break;
+    case MAGIC_MACRO:
+      result = func->typedata.magic_func(inputs);
       break;
     default:
       printf("Invalid object type called as function\n");
       exit(1);
   }
+  free_nObj(func);
   return result;
 }
 
 //BEGIN testing
 
 void set(char* c,nObj n) {
-  *(get(c,&global)) = n;
+  nObj* val = get(c,scope);
+  if((*val) != NULL) free_nObj(*val);
+  (*val) = n;
 }
 
 //TODO: actually handle errors rather than just exit(1)'ing
@@ -138,13 +151,40 @@ nObj print(nObj inputs) {
     exit(1);
   }
 }
+
 nObj input(nObj useless) {
   char buffer[500];
   fgets(buffer,500,stdin);
   for(int i = 0; 500 > i; i++) if(buffer[i] == '\n') {buffer[i] = '\0'; break;}
   return new_str(buffer);
 }
+
+nObj doNAIL(nObj sideffects) {
+  if(!sideffects) return new_zilch();
+  while(sideffects->next) {
+    sideffects = sideffects->next;
+  }
+  return clone(sideffects);
+}
+
+
+nObj show(nObj input) {
+  out_nObj(input);putchar('\n');
+  return new_zilch();
+}
+
+nObj enter_namespace(nObj operation) {
+  Environment* last = scope;
+  scope = new_inner(scope);
+  free_nObj(eval(operation));
+  free_env(scope,true);
+  scope = last;
+  return new_zilch();
+}
+
 int main() {
+  global = new_global();
+  scope = &global;
   set("+",new_magic_func(add));
   set("-",new_magic_func(sub));
   set("*",new_magic_func(mul));
@@ -153,6 +193,10 @@ int main() {
   set("set!",new_magic_func(setsym));
   set("print!",new_magic_func(print));
   set("input?",new_magic_func(input));
+  set("do",new_magic_func(doNAIL));
+  
+  set("show!",new_magic_macro(show));
+  set("enter-namespace",new_magic_macro(enter_namespace));
   list tks;
   nObj ast;
   nObj result;
@@ -170,5 +214,5 @@ int main() {
     free_nObj(ast);
     text[0] = '\0';
   }
-  free_env(global);
+  free_env(scope,false);
 }
