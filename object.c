@@ -2,6 +2,7 @@
 #include "stdio.h"
 #include "stdlib.h"
 #include "string.h"
+#include "environment.h"
 
 #define EMPTY malloc(sizeof(struct nailObject))
 
@@ -64,6 +65,18 @@ nObj new_magic_macro(nObj (*func)(nObj)) {
   return result;
 }
 
+nObj new_user_func(char **args, int nargs, nObj code,Environment* closure) {
+  nObj result = EMPTY;
+  result->quoted = false;
+  result->type = USER_FUNC;
+  result->next = NULL;
+  result->typedata.func.argnames = args;
+  result->typedata.func.nargs = nargs;
+  result->typedata.func.code = code;
+  result->typedata.func.closure = closure;
+  return result;
+}
+
 nObj clone(nObj n) {
   if(!n) return NULL;
   nObj result = EMPTY;
@@ -79,6 +92,18 @@ nObj clone(nObj n) {
       break;
     case LIST:
       result->typedata.head = clone(n->typedata.head);
+      break;
+    case USER_FUNC:;
+      printf("cloning somthin'\n");
+      //increment refcounts
+      Environment* cls = n->typedata.func.closure;
+      while(cls->type != GLOBAL) {
+        Namespace *n = cls->typedata.inner.inner;
+        printf("incrementing mah referoonies...\n");
+        n->refcount++;
+        cls = cls->typedata.inner.outer;
+      }
+      result->typedata = n->typedata;
       break;
     default:
       result->typedata = n->typedata;
@@ -99,15 +124,22 @@ void free_nObj(nObj n) {
     case LIST:
       free_nObj(n->typedata.head);
       break;
-    default:
+    case USER_FUNC:
+      free_nObj(n->typedata.func.code);
+      free_env(n->typedata.func.closure);
+      char** args = n->typedata.func.argnames;
+      for(int i = 0;i < n->typedata.func.nargs;i++) {
+        free(args[i]);
+      }
+      free(args);
       break;
+    default: break;
   }
   free_nObj(n->next);
   free(n);
 }
 
 void out_nObj(nObj n) {
-  if(n->quoted) putchar('#');
   switch(n->type) {
     case STR:
       printf("\"%s\"",n->typedata.strdata);
@@ -132,6 +164,9 @@ void out_nObj(nObj n) {
     case ZILCH:
       printf("zilch");
       break;
+    case USER_FUNC:
+      printf("[User-defined function]");
+      break;
   }
   if(!n->next) return;
   putchar(' '); //Items are seperated by spaces
@@ -139,7 +174,6 @@ void out_nObj(nObj n) {
 }
 
 static void aux_toStr(nObj n,char* result) {
-  if(n->quoted) strcat(result,"#");
   char temp[100];
   switch(n->type) {
     case STR:
@@ -164,6 +198,9 @@ static void aux_toStr(nObj n,char* result) {
       break;
     case ZILCH:
       strcat(result,"zilch");
+      break;
+    case USER_FUNC:
+      strcat(result,"[User function]");
       break;
   }
   strcat(result,temp);

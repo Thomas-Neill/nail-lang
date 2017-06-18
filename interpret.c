@@ -12,7 +12,7 @@ nObj eval(nObj n) {
     free_nObj(result->next);
   } else {
     switch(n->type) {
-      case LIST: 
+      case LIST:
         result = call(n);
         break;
       case SYM:
@@ -27,11 +27,13 @@ nObj eval(nObj n) {
         result = clone(n);
         free_nObj(result->next);
        break;
-     } 
+     }
   }
   result->next = eval(n->next);
   return result;
 }
+
+nObj call_user_func(nObj func,nObj args);
 
 nObj call(nObj l) {
   //just evaluate the head!!!
@@ -41,23 +43,46 @@ nObj call(nObj l) {
   nObj func = eval(copy->typedata.head);
   copy->typedata.head->next = temp;
   free_nObj(copy);
-  
+
   nObj inputs = l->typedata.head->next;
   nObj result;
   switch(func->type) {
-    case MAGIC_FUNC:;
-      nObj temp = eval(inputs);
+    case MAGIC_FUNC:
+      temp = eval(inputs);
       result = func->typedata.magic_func(temp);
       free_nObj(temp);
       break;
     case MAGIC_MACRO:
       result = func->typedata.magic_func(inputs);
       break;
+    case USER_FUNC:
+      temp = eval(inputs);
+      result = call_user_func(func,inputs);
+      free_nObj(temp);
+      break;
     default:
       printf("Invalid object type called as function\n");
       exit(1);
   }
   free_nObj(func);
+  return result;
+}
+
+void set(char* c,nObj n);
+
+nObj call_user_func(nObj func,nObj inputs) {
+  Environment* old_scope = scope;
+  scope = func->typedata.func.closure;
+  nObj ptr = clone(inputs);
+  for(int i = 0;i < func->typedata.func.nargs;i++) {
+    if(!ptr) {puts("insufficent inputs!");exit(1);}
+    nObj temp = ptr->next;
+    ptr->next = NULL;
+    set(func->typedata.func.argnames[i],ptr);
+    ptr = temp;
+  }
+  nObj result = eval(func->typedata.func.code);
+  scope = old_scope;
   return result;
 }
 
@@ -177,9 +202,32 @@ nObj enter_namespace(nObj operation) {
   Environment* last = scope;
   scope = new_inner(scope);
   free_nObj(eval(operation));
-  free_env(scope,true);
+  free_env(scope);
   scope = last;
   return new_zilch();
+}
+
+nObj make_function(nObj args) {
+  int nargs = 0;
+  char** extractedargs;
+  //extract number of arguments to function
+  if(args->type != LIST) {puts("Expected argument list as first argument"); exit(1);}
+  nObj temp = args->typedata.head;
+  while(temp) {
+    if(temp->type != SYM) {puts("Expected symbol in symbol list."); exit(1);}
+    temp = temp->next;
+    nargs++;
+  }
+  //extract names of arguments
+  extractedargs = malloc(sizeof(char*)*nargs);
+  temp = args->typedata.head;
+  int ind = 0;
+  while(temp) {
+    extractedargs[ind] = strdup(temp->typedata.symdata);
+    ind++;
+    temp = temp->next;
+  }
+  return new_user_func(extractedargs,nargs,clone(args->next),new_closure(scope));
 }
 
 int main() {
@@ -194,13 +242,15 @@ int main() {
   set("print!",new_magic_func(print));
   set("input?",new_magic_func(input));
   set("do",new_magic_func(doNAIL));
-  
+  set("lambda",new_magic_macro(make_function));
+
   set("show!",new_magic_macro(show));
   set("enter-namespace",new_magic_macro(enter_namespace));
   list tks;
   nObj ast;
   nObj result;
-  char text[500] = "";
+  char text[500];
+  text[0] = '\0';
   while(true) {
     printf("NAIL> ");
     fgets(text,500,stdin);
@@ -209,10 +259,10 @@ int main() {
     ast = parse(tks);
     result = eval(ast);
     out_nObj(result); putchar('\n');
-    free_tokens(tks); 
+    free_tokens(tks);
     free_nObj(result);
     free_nObj(ast);
     text[0] = '\0';
   }
-  free_env(scope,false);
+  free_env(&global);
 }

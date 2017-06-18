@@ -18,7 +18,7 @@ bool has(const char* key,Environment e) {
       result = has_aux(key,e.typedata.global);
       break;
     case INNER:
-      result = has_aux(key,e.typedata.inner.inner) || has(key,*e.typedata.inner.outer);
+      result = has_aux(key,e.typedata.inner.inner->kvpairs) || has(key,*e.typedata.inner.outer);
       break;
   }
   return result;
@@ -46,12 +46,12 @@ nObj* get(const char* key,Environment *e) {
       result = get_aux(key,&e->typedata.global);
       break;
     case INNER:
-      if(has_aux(key,e->typedata.inner.inner)) { //Variable exists inside scope
-        result = get_aux(key,&e->typedata.inner.inner);
+      if(has_aux(key,e->typedata.inner.inner->kvpairs)) { //Variable exists inside scope
+        result = get_aux(key,&e->typedata.inner.inner->kvpairs);
       } else if(has(key,*e->typedata.inner.outer)) { //Variable exists outside scope
         result = get(key,e->typedata.inner.outer);
       } else { //Variable doesn't exist
-        result = get_aux(key,&e->typedata.inner.inner);
+        result = get_aux(key,&e->typedata.inner.inner->kvpairs);
       }
       break;
   }
@@ -69,16 +69,21 @@ static void free_env_aux(list e) {
   delWith(e,freeKV);
 }
 
-void free_env(Environment *e,bool dynamic) {
+void free_env(Environment *e) {
   switch(e->type) {
     case GLOBAL:
       free_env_aux(e->typedata.global);
       break;
     case INNER:
-      free_env_aux(e->typedata.inner.inner);
+      if(e->typedata.inner.inner->refcount == 1) { //this is the last reference to it
+        free_env_aux(e->typedata.inner.inner->kvpairs);
+        free(e->typedata.inner.inner);
+      } else {
+        e->typedata.inner.inner->refcount--;
+      }
+      free(e);
       break;
   }
-  if(dynamic) free(e);
 }
 
 Environment new_global() {
@@ -91,7 +96,18 @@ Environment new_global() {
 Environment* new_inner(Environment *outer) {
   Environment *result = malloc(sizeof(Environment));
   result->type = INNER;
-  result->typedata.inner.inner = NULL;
+  result->typedata.inner.inner = malloc(sizeof(Namespace));
+  result->typedata.inner.inner->refcount = 1;
+  result->typedata.inner.inner->kvpairs = NULL;
   result->typedata.inner.outer = outer;
+  return result;
+}
+
+Environment* new_closure(Environment *outer) {
+  Environment* result = new_inner(outer);
+  while(outer->type == INNER) { //Increase reference counts
+    outer->typedata.inner.inner->refcount++;
+    outer = outer->typedata.inner.outer;
+  }
   return result;
 }

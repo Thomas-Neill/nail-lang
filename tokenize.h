@@ -1,7 +1,7 @@
 #pragma once
 #include "list.h"
 
-typedef enum {TK_LPAREN,TK_RPAREN,TK_HASH, // # is equivalent to ' in other lisps
+typedef enum {TK_LPAREN,TK_RPAREN,TK_QUOTE, // # is equivalent to ' in other lisps
 	TK_SYM,TK_STR,TK_NUM //Atoms
 } TK_TYPE;
 

@@ -21,7 +21,7 @@ nObj parse(list tokens) {
   Token* head = at(tokens,current);
   current++;
   switch(head->type) {
-    case TK_HASH:
+    case TK_QUOTE:
       free(result);
       result = parse(tokens);
       result->quoted = true;

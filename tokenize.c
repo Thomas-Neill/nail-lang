@@ -39,8 +39,8 @@ static void munch_token() {
   } else if(accept(")")) {
     push(TK_RPAREN);
     return;
-  } else if(accept("#")) {
-    push(TK_HASH);
+  } else if(accept("'")) {
+    push(TK_QUOTE);
     return;
   } else if(accept("0123456789")) {
     while(accept("0123456789."));
@@ -53,7 +53,7 @@ static void munch_token() {
     while(Naccept("\"0123456789 \t\n()#"));
     push(TK_SYM);
   } else if(accept("\"")) {
-    //TODO: add string escapes, and single-quoted strings
+    //TODO: add string escapes
     while(Naccept("\"\0"));
     if(peek() == '\0') {
       printf("Error: unterminated string literal!\n");
@@ -129,8 +129,8 @@ char* textify_token(Token *tk) {
     case TK_RPAREN:
       strcpy(result,"<token \")\">");
       break;
-    case TK_HASH:
-      strcpy(result,"<token \"#\">");
+    case TK_QUOTE:
+      strcpy(result,"<token \"'\">");
       break;
     case TK_NUM:
       sprintf(result,"<number %f>",*((float*)tk->value));
