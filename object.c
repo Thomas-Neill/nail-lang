@@ -93,13 +93,12 @@ nObj clone(nObj n) {
     case LIST:
       result->typedata.head = clone(n->typedata.head);
       break;
-    case USER_FUNC:;
-      printf("cloning somthin'\n");
+    case USER_FUNC:
+      printf("incrementing mah referoonies...\n");
       //increment refcounts
       Environment* cls = n->typedata.func.closure;
       while(cls->type != GLOBAL) {
         Namespace *n = cls->typedata.inner.inner;
-        printf("incrementing mah referoonies...\n");
         n->refcount++;
         cls = cls->typedata.inner.outer;
       }

@@ -5,5 +5,5 @@
 Environment global;
 Environment* scope;
 
-nObj eval(nObj n,bool just_head);
+nObj eval(nObj n);
 nObj call(nObj list);

@@ -1,1 +1,1 @@
-gcc --std=gnu99 -Wall *.c
+gcc --std=gnu99 -Wall -g *.c
