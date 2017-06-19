@@ -74,6 +74,7 @@ nObj new_user_func(char **args, int nargs, nObj code,Environment* closure) {
   result->typedata.func.nargs = nargs;
   result->typedata.func.code = code;
   result->typedata.func.closure = closure;
+  result->typedata.func.ownsenv = true;
   return result;
 }
 
@@ -93,16 +94,9 @@ nObj clone(nObj n) {
     case LIST:
       result->typedata.head = clone(n->typedata.head);
       break;
-    case USER_FUNC:
-      printf("incrementing mah referoonies...\n");
-      //increment refcounts
-      Environment* cls = n->typedata.func.closure;
-      while(cls->type != GLOBAL) {
-        Namespace *n = cls->typedata.inner.inner;
-        n->refcount++;
-        cls = cls->typedata.inner.outer;
-      }
+    case USER_FUNC:;
       result->typedata = n->typedata;
+      result->typedata.func.ownsenv = false;
       break;
     default:
       result->typedata = n->typedata;
@@ -125,7 +119,7 @@ void free_nObj(nObj n) {
       break;
     case USER_FUNC:
       free_nObj(n->typedata.func.code);
-      free_env(n->typedata.func.closure);
+      if(n->typedata.func.ownsenv) free_env(n->typedata.func.closure);
       char** args = n->typedata.func.argnames;
       for(int i = 0;i < n->typedata.func.nargs;i++) {
         free(args[i]);

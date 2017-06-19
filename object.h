@@ -15,7 +15,7 @@ typedef struct nailObject {
     float numdata; //NUM
     struct nailObject* head; //LIST
     struct nailObject* (*magic_func)(struct nailObject*); //MAGIC_FUNC,MAGIC_MACRO
-    struct {char** argnames; int nargs; struct nailObject* code; struct Environment *closure;} func; //USER_FUNC
+    struct {char** argnames; int nargs; struct nailObject* code; struct Environment *closure; bool ownsenv;} func; //USER_FUNC
   } typedata;
   bool quoted;
 }* nObj;

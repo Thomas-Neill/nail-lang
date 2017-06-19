@@ -70,16 +70,15 @@ static void free_env_aux(list e) {
 }
 
 void free_env(Environment *e) {
-  puts("attempted murder");
   switch(e->type) {
     case GLOBAL:
       free_env_aux(e->typedata.global);
       break;
     case INNER:
       if(e->typedata.inner.inner->refcount == 1) { //this is the last reference to it
-        puts("killing an environment");
         free_env_aux(e->typedata.inner.inner->kvpairs);
         free(e->typedata.inner.inner);
+        if(e->typedata.inner.outer->type != GLOBAL) free_env(e->typedata.inner.outer); //one less ref
         free(e);
       } else {
         e->typedata.inner.inner->refcount--;
