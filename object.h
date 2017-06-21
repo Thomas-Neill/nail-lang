@@ -3,7 +3,7 @@
 #include "stdlib.h"
 
 typedef enum {LIST,STR,SYM,NUM,MAGIC_FUNC,MAGIC_MACRO,USER_FUNC,ZILCH} nailType;
-
+void debug_type (nailType n);
 struct Environment;
 
 typedef struct nailObject {
@@ -28,6 +28,9 @@ nObj new_magic_func(nObj (*func)(nObj));
 nObj new_magic_macro(nObj (*func)(nObj));
 nObj new_user_func(char **args, int nargs, nObj code,struct Environment *closure);
 nObj new_zilch();
+
+struct {bool change_ownership;} clone_settings;
+void reset_clone_settings();
 nObj clone(nObj n);
 
 void free_nObj(nObj n);

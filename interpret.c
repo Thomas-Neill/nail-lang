@@ -57,7 +57,7 @@ nObj call(nObj l) {
       break;
     case USER_FUNC:
       temp = eval(inputs);
-      result = call_user_func(func,inputs);
+      result = call_user_func(func,temp);
       free_nObj(temp);
       break;
     default:
@@ -101,7 +101,7 @@ nObj add(nObj inputs) {
     exit(1);
   }
   if(inputs->type != NUM) {
-      printf("Invalid type for '+' operation\n");
+      printf("Invalid type for '+' operation:\n");
       exit(1);
   }
   if(!inputs->next) return new_num(abs(inputs->typedata.numdata));
@@ -162,7 +162,9 @@ nObj divide(nObj inputs) {
 }
 
 nObj setsym(nObj inputs) {
-  set(inputs->typedata.symdata,clone(inputs->next));
+  clone_settings.change_ownership = true;
+  set(inputs->typedata.symdata,eval(inputs->next));
+  reset_clone_settings();
   return new_zilch();
 }
 
@@ -231,21 +233,24 @@ nObj make_function(nObj args) {
 }
 
 int main() {
+  reset_clone_settings();
   global = new_global();
   scope = &global;
+
   set("+",new_magic_func(add));
   set("-",new_magic_func(sub));
   set("*",new_magic_func(mul));
   set("/",new_magic_func(divide));
   set("zilch",new_zilch());
-  set("set!",new_magic_func(setsym));
   set("print!",new_magic_func(print));
   set("input?",new_magic_func(input));
   set("do",new_magic_func(doNAIL));
   set("lambda",new_magic_macro(make_function));
 
+  set("set!",new_magic_macro(setsym));
   set("show!",new_magic_macro(show));
   set("enter-namespace",new_magic_macro(enter_namespace));
+
   list tks;
   nObj ast;
   nObj result;
@@ -255,10 +260,13 @@ int main() {
     printf("NAIL> ");
     fgets(text,500,stdin);
     if(strncmp("quit",text,4) == 0) break;
+
     tks = tokenize(text);
     ast = parse(tks);
     result = eval(ast);
+
     out_nObj(result); putchar('\n');
+
     free_tokens(tks);
     free_nObj(result);
     free_nObj(ast);

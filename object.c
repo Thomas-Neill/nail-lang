@@ -6,6 +6,27 @@
 
 #define EMPTY malloc(sizeof(struct nailObject))
 
+void debug_type(nailType n) {
+  switch(n) {
+    case LIST:
+      puts("LIST");break;
+    case STR:
+      puts("STR");break;
+    case SYM:
+      puts("SYM");break;
+    case NUM:
+      puts("NUM");break;
+    case MAGIC_FUNC:
+      puts("MAGIC_FUNC");break;
+    case MAGIC_MACRO:
+      puts("MAGIC_MACRO");break;
+    case USER_FUNC:
+      puts("USER_FUNC");break;
+    case ZILCH:
+      puts("ZILCH");break;
+  }
+}
+
 nObj new_str(const char* c) {
   nObj result = EMPTY;
   result->quoted = false;
@@ -78,6 +99,10 @@ nObj new_user_func(char **args, int nargs, nObj code,Environment* closure) {
   return result;
 }
 
+void reset_clone_settings() {
+  clone_settings.change_ownership = false;
+}
+
 nObj clone(nObj n) {
   if(!n) return NULL;
   nObj result = EMPTY;
@@ -96,7 +121,8 @@ nObj clone(nObj n) {
       break;
     case USER_FUNC:;
       result->typedata = n->typedata;
-      result->typedata.func.ownsenv = false;
+      if(!clone_settings.change_ownership) result->typedata.func.ownsenv = false;
+      else n->typedata.func.ownsenv = false;
       break;
     default:
       result->typedata = n->typedata;
@@ -118,13 +144,15 @@ void free_nObj(nObj n) {
       free_nObj(n->typedata.head);
       break;
     case USER_FUNC:
-      free_nObj(n->typedata.func.code);
-      if(n->typedata.func.ownsenv) free_env(n->typedata.func.closure);
-      char** args = n->typedata.func.argnames;
-      for(int i = 0;i < n->typedata.func.nargs;i++) {
-        free(args[i]);
+      if(n->typedata.func.ownsenv) {
+        free_nObj(n->typedata.func.code);
+        free_env(n->typedata.func.closure);
+        char** args = n->typedata.func.argnames;
+        for(int i = 0;i < n->typedata.func.nargs;i++) {
+          free(args[i]);
+        }
+        free(args);
       }
-      free(args);
       break;
     default: break;
   }
