@@ -2,6 +2,19 @@
 #include "stdio.h"
 #include "string.h"
 
+void init_eval_settings() {
+  eval_settings.just_eval_head = false;
+}
+
+__eval_settings cache;
+void cache_eval_settings() {
+  cache = eval_settings;
+}
+
+void reset_eval_settings() {
+  eval_settings = cache;
+}
+
 
 nObj eval(nObj n) {
   if(!n) return NULL;
@@ -28,21 +41,22 @@ nObj eval(nObj n) {
        break;
      }
   }
-  result->next = eval(n->next);
+  if(eval_settings.just_eval_head) {
+    result->next = NULL;
+  } else {
+    result->next = eval(n->next);
+  }
   return result;
 }
 
 nObj call(nObj l) {
-  //just evaluate the head!!!
-  nObj copy = clone(l);
-  nObj temp = copy->typedata.head->next;
-  copy->typedata.head->next = NULL;
-  nObj func = eval(copy->typedata.head);
-  copy->typedata.head->next = temp;
-  free_nObj(copy);
+  cache_eval_settings();
+  eval_settings.just_eval_head = true;
+  nObj func = eval(l->typedata.head);
+  reset_eval_settings();
 
   nObj inputs = l->typedata.head->next;
-  nObj result;
+  nObj result,temp;
   switch(func->type) {
     case MAGIC_FUNC:
       temp = eval(inputs);
@@ -90,6 +104,7 @@ void set(char* c,nObj n) {
 
 void init_interpreter() {
   reset_clone_settings();
+  init_eval_settings();
   global = new_global();
   scope = &global;
 }

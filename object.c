@@ -24,6 +24,8 @@ void debug_type(nailType n) {
       puts("USER_FUNC");break;
     case ZILCH:
       puts("ZILCH");break;
+    case BOOL:
+      puts("BOOL");break;
   }
 }
 
@@ -50,6 +52,15 @@ nObj new_num(float f) {
   result->quoted = false;
   result->type = NUM;
   result->typedata.numdata = f;
+  result->next = NULL;
+  return result;
+}
+
+nObj new_bool(bool b) {
+  nObj result = EMPTY;
+  result->quoted = false;
+  result->type = BOOL;
+  result->typedata.booldata = b;
   result->next = NULL;
   return result;
 }
@@ -176,6 +187,13 @@ void out_nObj(nObj n) {
       out_nObj(n->typedata.head);
       putchar(')');
       break;
+    case BOOL:
+      if(n->typedata.booldata) {
+        printf("true");
+      } else {
+        printf("false");
+      }
+      break;
     case MAGIC_FUNC:
       printf("[Magic function]");
       break;
@@ -210,6 +228,13 @@ static void aux_toStr(nObj n,char* result) {
       strcat(result,"(");
       aux_toStr(n->typedata.head,result);
       strcat(result,")");
+      break;
+    case BOOL:
+      if(n->typedata.booldata) {
+        strcat(result,"true");
+      } else {
+        strcat(result,"false");
+      }
       break;
     case MAGIC_FUNC:
       strcat(result,"[Magic function]");

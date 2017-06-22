@@ -46,7 +46,6 @@ nObj mul(nObj inputs) {
   float sum = 1;
   while(inputs) {
     if(inputs->type != NUM) {
-      out_nObj(inputs);putchar('\n');
       printf("Invalid type for '*' operation\n");
       exit(1);
     }
@@ -140,12 +139,37 @@ nObj make_function(nObj args) {
   return new_user_func(extractedargs,nargs,clone(args->next),new_closure(scope));
 }
 
+nObj nailIf(nObj inputs) {
+  if(!inputs) {puts("Three inputs expected for if function");exit(1);}
+  if(!inputs->next) {puts("Three inputs expected for if function");exit(1);}
+  if(!inputs->next->next) {puts("Three inputs expected for if function");exit(1);}
+  if(inputs->next->next->next) {puts("Three inputs expected for if function");exit(1);}
+
+  cache_eval_settings();
+  eval_settings.just_eval_head = true;
+  nObj cond = eval(inputs);
+  reset_eval_settings();
+  if(cond->type != BOOL) {puts("Expected boolean as first arg of if");exit(1);}
+  bool b = cond->typedata.booldata;
+  free_nObj(cond);
+
+  nObj result;
+  if(b) {
+    cache_eval_settings();
+    eval_settings.just_eval_head = true;
+    result = eval(inputs->next);
+    reset_eval_settings();
+  } else {
+    result = eval(inputs->next->next);
+  }
+  return result;
+}
+
 void load_stdlib() {
   set("+",new_magic_func(add));
   set("-",new_magic_func(sub));
   set("*",new_magic_func(mul));
   set("/",new_magic_func(divide));
-  set("zilch",new_zilch());
   set("print!",new_magic_func(print));
   set("input?",new_magic_func(input));
   set("do",new_magic_func(doNAIL));
@@ -154,4 +178,9 @@ void load_stdlib() {
   set("set!",new_magic_macro(setsym));
   set("show!",new_magic_macro(show));
   set("enter-namespace",new_magic_macro(enter_namespace));
+  set("if",new_magic_macro(nailIf));
+
+  set("zilch",new_zilch());
+  set("true",new_bool(true));
+  set("false",new_bool(false));
 }
