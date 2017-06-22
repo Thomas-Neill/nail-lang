@@ -3,6 +3,8 @@
 #include "tokenize.h"
 #include "parse.h"
 #include "string.h"
+#include "editline/readline.h"
+#include "editline/history.h"
 
 nObj eval(nObj n) {
   if(!n) return NULL;
@@ -254,14 +256,13 @@ int main() {
   list tks;
   nObj ast;
   nObj result;
-  char text[500];
-  text[0] = '\0';
+  char *input;
   while(true) {
-    printf("NAIL> ");
-    fgets(text,500,stdin);
-    if(strncmp("quit",text,4) == 0) break;
+    input = readline("NAIL> ");
+    add_history(input);
+    if(!strcmp(input,"quit")) {free(input);break;}
 
-    tks = tokenize(text);
+    tks = tokenize(input);
     ast = parse(tks);
     result = eval(ast);
 
@@ -270,7 +271,7 @@ int main() {
     free_tokens(tks);
     free_nObj(result);
     free_nObj(ast);
-    text[0] = '\0';
+    free(input);
   }
   free_env(&global);
 }
