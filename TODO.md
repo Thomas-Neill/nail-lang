@@ -6,8 +6,8 @@
 
 ## User Experience
 * Better errors (tokenizer, parser, and interpreter)
-* Functions, macros
+* Macros
 * C Library loader
 
-# Maybe???
-* Namespace objects (e.g foo.bar)
+## Known bugs
+* `([Built-in-function] [recursive-user-function] x)` omits the `x` for some reason.
