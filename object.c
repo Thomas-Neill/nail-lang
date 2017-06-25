@@ -110,8 +110,19 @@ nObj new_user_func(char **args, int nargs, nObj code,Environment* closure) {
   return result;
 }
 
+__clone_settings cache;
+
+void cache_clone_settings() {
+  cache = clone_settings;
+}
+
 void reset_clone_settings() {
+  clone_settings = cache;
+}
+
+void init_clone_settings() {
   clone_settings.change_ownership = false;
+  clone_settings.just_eval_head = false;
 }
 
 nObj clone(nObj n) {
@@ -119,7 +130,11 @@ nObj clone(nObj n) {
   nObj result = EMPTY;
   result->quoted = n->quoted;
   result->type = n->type;
-  result->next = clone(n->next);
+  if(!clone_settings.just_eval_head) {
+    result->next = clone(n->next);
+  } else {
+    result->next = NULL;
+  }
   switch(n->type) {
     case STR:
       result->typedata.strdata = strdup(n->typedata.strdata);

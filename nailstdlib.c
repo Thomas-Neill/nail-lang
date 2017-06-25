@@ -69,6 +69,7 @@ nObj divide(nObj inputs) {
 }
 
 nObj setsym(nObj inputs) {
+  cache_clone_settings();
   clone_settings.change_ownership = true;
   set(inputs->typedata.symdata,eval(inputs->next));
   reset_clone_settings();
@@ -165,6 +166,54 @@ nObj nailIf(nObj inputs) {
   return result;
 }
 
+nObj equals(nObj inputs) {
+  if(!inputs) {puts("Two inputs expected for = function.");exit(1);}
+  if(!inputs->next) {puts("Two inputs expected for = function.");exit(1);}
+  nObj x = inputs;
+  nObj y = inputs->next;
+  if(y->type != x->type) {
+    return new_bool(false);
+  }
+  switch(x->type) {
+    case NUM:
+      return new_bool(x->typedata.numdata == y->typedata.numdata);
+    case MAGIC_FUNC:
+    case MAGIC_MACRO:
+      return new_bool(x->typedata.magic_func == y->typedata.magic_func);
+    case STR:
+    case SYM:
+      return new_bool(!strcmp(x->typedata.strdata,y->typedata.strdata));
+    case ZILCH:
+      return new_bool(true);
+    case LIST:
+      x = x->typedata.head;
+      y = y->typedata.head;
+      nObj pair,result;
+      cache_clone_settings();
+      clone_settings.just_eval_head = true;
+      while(x && y) {
+        pair = clone(x);
+        pair->next = clone(y);
+        result = equals(pair);
+        bool b = result->typedata.booldata;
+        free_nObj(result);
+        free_nObj(pair);
+        if(!b) {
+          reset_clone_settings();
+          return new_bool(false);
+        }
+        x = x->next;
+        y = y->next;
+      }
+      reset_clone_settings();
+      //inequal length
+      if(((bool)x) != ((bool)y)) return new_bool(false);
+      return new_bool(true);
+    default:
+      return new_bool(false);
+  }
+}
+
 void load_stdlib() {
   set("+",new_magic_func(add));
   set("-",new_magic_func(sub));
@@ -173,12 +222,13 @@ void load_stdlib() {
   set("print!",new_magic_func(print));
   set("input?",new_magic_func(input));
   set("do",new_magic_func(doNAIL));
-  set("lambda",new_magic_macro(make_function));
+  set("=",new_magic_func(equals));
 
   set("set!",new_magic_macro(setsym));
   set("show!",new_magic_macro(show));
   set("enter-namespace",new_magic_macro(enter_namespace));
   set("if",new_magic_macro(nailIf));
+  set("lambda",new_magic_macro(make_function));
 
   set("zilch",new_zilch());
   set("true",new_bool(true));

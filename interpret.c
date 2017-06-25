@@ -19,6 +19,7 @@ void reset_eval_settings() {
 nObj eval(nObj n) {
   if(!n) return NULL;
   nObj result;
+  //we can't use the fancy new clone_settings here because of the call if it's quoted
   if(n->quoted) {
     result = clone(n);
     free_nObj(result->next);
@@ -55,6 +56,9 @@ nObj call(nObj l) {
   nObj func = eval(l->typedata.head);
   reset_eval_settings();
 
+  cache_eval_settings();
+  init_eval_settings();
+
   nObj inputs = l->typedata.head->next;
   nObj result,temp;
   switch(func->type) {
@@ -75,6 +79,7 @@ nObj call(nObj l) {
       printf("Invalid object type called as function\n");
       exit(1);
   }
+  reset_eval_settings();
   free_nObj(func);
   return result;
 }
