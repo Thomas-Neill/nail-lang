@@ -18,7 +18,7 @@ void run_REPL() {
 
     tks = tokenize(input);
     ast = parse(tks);
-    result = eval(ast);
+    result = eval(ast,REGULAR);
 
     out_nObj(result); putchar('\n');
 
@@ -37,7 +37,7 @@ void exec_file(char* name) {
   fclose(f);
   list tks = tokenize(buf);
   nObj ast = parse(tks);
-  free_nObj(eval(ast));
+  free_nObj(eval(ast,REGULAR));
   free_nObj(ast);
   free_tokens(tks);
 }

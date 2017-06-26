@@ -71,7 +71,7 @@ nObj divide(nObj inputs) {
 nObj setsym(nObj inputs) {
   cache_clone_settings();
   clone_settings.change_ownership = true;
-  set(inputs->typedata.symdata,eval(inputs->next));
+  set(inputs->typedata.symdata,eval(inputs->next,REGULAR));
   reset_clone_settings();
   return new_zilch();
 }
@@ -111,7 +111,7 @@ nObj show(nObj input) {
 nObj enter_namespace(nObj operation) {
   Environment* last = scope;
   scope = new_inner(scope);
-  free_nObj(eval(operation));
+  free_nObj(eval(operation,REGULAR));
   free_env(scope);
   scope = last;
   return new_zilch();
@@ -146,22 +146,16 @@ nObj nailIf(nObj inputs) {
   if(!inputs->next->next) {puts("Three inputs expected for if function");exit(1);}
   if(inputs->next->next->next) {puts("Three inputs expected for if function");exit(1);}
 
-  cache_eval_settings();
-  eval_settings.just_eval_head = true;
-  nObj cond = eval(inputs);
-  reset_eval_settings();
+  nObj cond = eval(inputs,JUST_EVAL_HEAD);
   if(cond->type != BOOL) {puts("Expected boolean as first arg of if");exit(1);}
   bool b = cond->typedata.booldata;
   free_nObj(cond);
 
   nObj result;
   if(b) {
-    cache_eval_settings();
-    eval_settings.just_eval_head = true;
-    result = eval(inputs->next);
-    reset_eval_settings();
+    result = eval(inputs->next,JUST_EVAL_HEAD);
   } else {
-    result = eval(inputs->next->next);
+    result = eval(inputs->next->next,JUST_EVAL_HEAD);
   }
   return result;
 }

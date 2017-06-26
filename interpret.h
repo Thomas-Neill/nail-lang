@@ -5,11 +5,8 @@
 Environment global;
 Environment* scope;
 
-typedef struct {bool just_eval_head;} __eval_settings;
-__eval_settings eval_settings;
-void reset_eval_settings();
-void cache_eval_settings();
-nObj eval(nObj n);
+enum {REGULAR = 0, JUST_EVAL_HEAD = 1};
+nObj eval(nObj n,int eval_settings);
 nObj call(nObj list);
 nObj call_user_func(nObj func,nObj inputs);
 void set(char *c,nObj n);

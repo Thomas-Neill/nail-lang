@@ -2,21 +2,7 @@
 #include "stdio.h"
 #include "string.h"
 
-void init_eval_settings() {
-  eval_settings.just_eval_head = false;
-}
-
-__eval_settings cache;
-void cache_eval_settings() {
-  cache = eval_settings;
-}
-
-void reset_eval_settings() {
-  eval_settings = cache;
-}
-
-
-nObj eval(nObj n) {
+nObj eval(nObj n,int eval_settings) {
   if(!n) return NULL;
   nObj result;
   //we can't use the fancy new clone_settings here because of the call if it's quoted
@@ -42,28 +28,22 @@ nObj eval(nObj n) {
        break;
      }
   }
-  if(eval_settings.just_eval_head) {
+  if(eval_settings & JUST_EVAL_HEAD) {
     result->next = NULL;
   } else {
-    result->next = eval(n->next);
+    result->next = eval(n->next,eval_settings);
   }
   return result;
 }
 
 nObj call(nObj l) {
-  cache_eval_settings();
-  eval_settings.just_eval_head = true;
-  nObj func = eval(l->typedata.head);
-  reset_eval_settings();
-
-  cache_eval_settings();
-  init_eval_settings();
+  nObj func = eval(l->typedata.head,JUST_EVAL_HEAD);
 
   nObj inputs = l->typedata.head->next;
   nObj result,temp;
   switch(func->type) {
     case MAGIC_FUNC:
-      temp = eval(inputs);
+      temp = eval(inputs,REGULAR);
       result = func->typedata.magic_func(temp);
       free_nObj(temp);
       break;
@@ -71,7 +51,7 @@ nObj call(nObj l) {
       result = func->typedata.magic_func(inputs);
       break;
     case USER_FUNC:
-      temp = eval(inputs);
+      temp = eval(inputs,REGULAR);
       result = call_user_func(func,temp);
       free_nObj(temp);
       break;
@@ -79,7 +59,6 @@ nObj call(nObj l) {
       printf("Invalid object type called as function\n");
       exit(1);
   }
-  reset_eval_settings();
   free_nObj(func);
   return result;
 }
@@ -96,7 +75,7 @@ nObj call_user_func(nObj func,nObj inputs) {
     set(func->typedata.func.argnames[i],ptr);
     ptr = temp;
   }
-  nObj result = eval(func->typedata.func.code);
+  nObj result = eval(func->typedata.func.code,REGULAR);
   scope = old_scope;
   return result;
 }
@@ -109,7 +88,6 @@ void set(char* c,nObj n) {
 
 void init_interpreter() {
   reset_clone_settings();
-  init_eval_settings();
   global = new_global();
   scope = &global;
 }
