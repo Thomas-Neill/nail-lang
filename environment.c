@@ -58,6 +58,19 @@ nObj* get(const char* key,Environment *e) {
   return result;
 }
 
+nObj* get_inner(const char* key,Environment *e) {
+  nObj* result;
+  switch(e->type) {
+    case INNER:
+      result = get_aux(key,&e->typedata.inner.inner->kvpairs);
+      break;
+    default:
+      puts("Unsupported type for 'get_inner'.");
+      exit(1);
+  }
+  return result;
+}
+
 static void freeKV(void* kv) {
   KVpair* k = (KVpair*)kv;
   free_nObj(k->value);
@@ -70,6 +83,7 @@ static void free_env_aux(list e) {
 }
 
 void free_env(Environment *e) {
+  if(!e) return;
   switch(e->type) {
     case GLOBAL:
       free_env_aux(e->typedata.global);

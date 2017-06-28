@@ -72,7 +72,7 @@ nObj call_user_func(nObj func,nObj inputs) {
     if(!ptr) {puts("insufficent inputs!");exit(1);}
     nObj temp = ptr->next;
     ptr->next = NULL;
-    set(func->typedata.func.argnames[i],ptr);
+    set_inner(func->typedata.func.argnames[i],ptr);
     ptr = temp;
   }
   nObj result = eval(func->typedata.func.code,REGULAR);
@@ -82,7 +82,13 @@ nObj call_user_func(nObj func,nObj inputs) {
 
 void set(char* c,nObj n) {
   nObj* val = get(c,scope);
-  if((*val) != NULL) free_nObj(*val);
+  if(*val) free_nObj(*val);
+  (*val) = n;
+}
+
+void set_inner(char* c,nObj n) {
+  nObj* val = get_inner(c,scope);
+  if(*val) free_nObj(*val);
   (*val) = n;
 }
 

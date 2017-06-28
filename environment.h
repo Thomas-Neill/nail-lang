@@ -25,6 +25,7 @@ typedef struct Environment {
 
 bool has(const char* key,Environment e);
 nObj* get(const char* key,Environment *e);
+nObj* get_inner(const char* key,Environment *e); //force access at inner scope
 Environment* clone_env(Environment* e);
 
 void free_env(Environment *e);
