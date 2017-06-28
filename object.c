@@ -110,30 +110,15 @@ nObj new_user_func(char **args, int nargs, nObj code,Environment* closure) {
   return result;
 }
 
-__clone_settings cache;
-
-void cache_clone_settings() {
-  cache = clone_settings;
-}
-
-void reset_clone_settings() {
-  clone_settings = cache;
-}
-
-void init_clone_settings() {
-  clone_settings.change_ownership = false;
-  clone_settings.just_eval_head = false;
-}
-
-nObj clone(nObj n) {
+nObj clone(nObj n,int clone_settings) {
   if(!n) return NULL;
   nObj result = EMPTY;
   result->quoted = n->quoted;
   result->type = n->type;
-  if(!clone_settings.just_eval_head) {
-    result->next = clone(n->next);
-  } else {
+  if(clone_settings & JUST_CLONE_HEAD) {
     result->next = NULL;
+  } else {
+    result->next = clone(n->next,clone_settings);
   }
   switch(n->type) {
     case STR:
@@ -143,12 +128,12 @@ nObj clone(nObj n) {
       result->typedata.symdata = strdup(n->typedata.symdata);
       break;
     case LIST:
-      result->typedata.head = clone(n->typedata.head);
+      result->typedata.head = clone(n->typedata.head,REGULAR);
       break;
     case USER_FUNC:;
       result->typedata = n->typedata;
-      if(!clone_settings.change_ownership) result->typedata.func.ownsenv = false;
-      else n->typedata.func.ownsenv = false;
+      if(clone_settings & CHANGE_OWNERSHIP)  n->typedata.func.ownsenv = false;
+      else result->typedata.func.ownsenv = false;
       break;
     default:
       result->typedata = n->typedata;

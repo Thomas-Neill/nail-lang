@@ -5,26 +5,25 @@
 nObj eval(nObj n,int eval_settings) {
   if(!n) return NULL;
   nObj result;
+  int clone_settings = JUST_CLONE_HEAD;
+  if(eval_settings & CLONE_CHANGE_OWNERSHIP) clone_settings |= CHANGE_OWNERSHIP;
   //we can't use the fancy new clone_settings here because of the call if it's quoted
   if(n->quoted) {
-    result = clone(n);
-    free_nObj(result->next);
+    result = clone(n,JUST_CLONE_HEAD);
   } else {
     switch(n->type) {
       case LIST:
         result = call(n);
         break;
       case SYM:
-        result = clone(*(get(n->typedata.symdata,scope)));
+        result = clone(*(get(n->typedata.symdata,scope)),JUST_CLONE_HEAD);
         if(result == NULL) {
           printf("Variable '%s' doesn't exist!\n",n->typedata.symdata);
           exit(1);
         }
-        free_nObj(result->next);
         break;
       default:
-        result = clone(n);
-        free_nObj(result->next);
+        result = clone(n,JUST_CLONE_HEAD);
        break;
      }
   }
@@ -67,7 +66,7 @@ nObj call(nObj l) {
 nObj call_user_func(nObj func,nObj inputs) {
   Environment* old_scope = scope;
   scope = func->typedata.func.closure;
-  nObj ptr = clone(inputs);
+  nObj ptr = clone(inputs,REGULAR);
   for(int i = 0;i < func->typedata.func.nargs;i++) {
     if(!ptr) {puts("insufficent inputs!");exit(1);}
     nObj temp = ptr->next;
@@ -93,7 +92,6 @@ void set_inner(char* c,nObj n) {
 }
 
 void init_interpreter() {
-  reset_clone_settings();
   global = new_global();
   scope = &global;
 }

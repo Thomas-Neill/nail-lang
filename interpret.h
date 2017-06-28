@@ -5,7 +5,7 @@
 Environment global;
 Environment* scope;
 
-enum {REGULAR = 0, JUST_EVAL_HEAD = 1};
+enum {JUST_EVAL_HEAD = 1, CLONE_CHANGE_OWNERSHIP = 2};
 nObj eval(nObj n,int eval_settings);
 nObj call(nObj list);
 nObj call_user_func(nObj func,nObj inputs);

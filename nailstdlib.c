@@ -69,10 +69,7 @@ nObj divide(nObj inputs) {
 }
 
 nObj setsym(nObj inputs) {
-  cache_clone_settings();
-  clone_settings.change_ownership = true;
-  set(inputs->typedata.symdata,eval(inputs->next,REGULAR));
-  reset_clone_settings();
+  set(inputs->typedata.symdata,eval(inputs->next,CLONE_CHANGE_OWNERSHIP));
   return new_zilch();
 }
 
@@ -99,7 +96,7 @@ nObj doNAIL(nObj sideffects) {
   while(sideffects->next) {
     sideffects = sideffects->next;
   }
-  return clone(sideffects);
+  return clone(sideffects,REGULAR);
 }
 
 
@@ -137,7 +134,7 @@ nObj make_function(nObj args) {
     ind++;
     temp = temp->next;
   }
-  return new_user_func(extractedargs,nargs,clone(args->next),new_closure(scope));
+  return new_user_func(extractedargs,nargs,clone(args->next,REGULAR),new_closure(scope));
 }
 
 nObj nailIf(nObj inputs) {
@@ -183,23 +180,19 @@ nObj equals(nObj inputs) {
       x = x->typedata.head;
       y = y->typedata.head;
       nObj pair,result;
-      cache_clone_settings();
-      clone_settings.just_eval_head = true;
       while(x && y) {
-        pair = clone(x);
-        pair->next = clone(y);
+        pair = clone(x,JUST_CLONE_HEAD);
+        pair->next = clone(y,JUST_CLONE_HEAD);
         result = equals(pair);
         bool b = result->typedata.booldata;
         free_nObj(result);
         free_nObj(pair);
         if(!b) {
-          reset_clone_settings();
           return new_bool(false);
         }
         x = x->next;
         y = y->next;
       }
-      reset_clone_settings();
       //inequal length
       if(((bool)x) != ((bool)y)) return new_bool(false);
       return new_bool(true);

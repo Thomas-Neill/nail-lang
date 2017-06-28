@@ -31,12 +31,8 @@ nObj new_bool(bool b);
 nObj new_user_func(char **args, int nargs, nObj code,struct Environment *closure);
 nObj new_zilch();
 
-typedef struct {bool change_ownership;bool just_eval_head;} __clone_settings;
-__clone_settings clone_settings;
-void cache_clone_settings();
-void reset_clone_settings();
-void init_clone_settings();
-nObj clone(nObj n);
+enum {REGULAR = 0, JUST_CLONE_HEAD = 1, CHANGE_OWNERSHIP = 2};
+nObj clone(nObj n,int clone_settings);
 
 void free_nObj(nObj n);
 
