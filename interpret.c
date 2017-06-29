@@ -7,7 +7,6 @@ nObj eval(nObj n,int eval_settings) {
   nObj result;
   int clone_settings = JUST_CLONE_HEAD;
   if(eval_settings & CLONE_CHANGE_OWNERSHIP) clone_settings |= CHANGE_OWNERSHIP;
-  //we can't use the fancy new clone_settings here because of the call if it's quoted
   if(n->quoted) {
     result = clone(n,JUST_CLONE_HEAD);
   } else {

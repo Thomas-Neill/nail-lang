@@ -201,6 +201,33 @@ nObj equals(nObj inputs) {
   }
 }
 
+nObj head(nObj n) {
+  if(n->type != LIST) {
+    puts("expected list for head function");
+    exit(1);
+  }
+  return clone(n->typedata.head,JUST_CLONE_HEAD);
+}
+
+nObj tail(nObj n) {
+  if(n->type != LIST) {
+    puts("expected list for tail function");
+    exit(1);
+  }
+  nObj result = new_empty_list();
+  result->typedata.head = clone(n->typedata.head->next,REGULAR);
+  return result;
+}
+
+nObj defn(nObj inputs) {
+  if(!inputs) {
+    puts("1 input expected for def");
+  }
+  nObj fn = make_function(inputs->next);
+  set(inputs->typedata.symdata,fn);
+  return new_zilch();
+}
+
 void load_stdlib() {
   set("+",new_magic_func(add));
   set("-",new_magic_func(sub));
@@ -210,12 +237,15 @@ void load_stdlib() {
   set("input?",new_magic_func(input));
   set("do",new_magic_func(doNAIL));
   set("=",new_magic_func(equals));
+  set("head",new_magic_func(head));
+  set("tail",new_magic_func(tail));
 
   set("set!",new_magic_macro(setsym));
   set("show!",new_magic_macro(show));
   set("enter-namespace",new_magic_macro(enter_namespace));
   set("if",new_magic_macro(nailIf));
   set("lambda",new_magic_macro(make_function));
+  set("define",new_magic_macro(defn));
 
   set("zilch",new_zilch());
   set("true",new_bool(true));
