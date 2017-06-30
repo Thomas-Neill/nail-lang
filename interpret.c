@@ -53,6 +53,9 @@ nObj call(nObj l) {
       result = call_user_func(func,temp);
       free_nObj(temp);
       break;
+    case USER_MACRO:
+      result = call_user_func(func,inputs);
+      break;
     default:
       printf("Invalid object type called as function\n");
       exit(1);

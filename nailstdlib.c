@@ -2,6 +2,7 @@
 #include "object.h"
 #include "stdio.h"
 #include "string.h"
+#include "math.h"
 
 nObj add(nObj inputs) {
   if(!inputs) {
@@ -12,7 +13,7 @@ nObj add(nObj inputs) {
       printf("Invalid type for '+' operation:\n");
       exit(1);
   }
-  if(!inputs->next) return new_num(abs(inputs->typedata.numdata));
+  if(!inputs->next) return new_num(fabsf(inputs->typedata.numdata));
   float sum = 0;
   while(inputs) {
     if(inputs->type != NUM) {
@@ -30,7 +31,7 @@ nObj sub(nObj inputs) {
     printf("Inputs required for '-'\n");
     exit(1);
   }
-  if(!inputs->next) return new_num(-abs(inputs->typedata.numdata));
+  if(!inputs->next) return new_num(-fabsf(inputs->typedata.numdata));
   if(inputs->type != NUM || inputs->next->type != NUM) {
     printf("Invalid type for '-' operation\n");
     exit(1);
@@ -60,7 +61,6 @@ nObj divide(nObj inputs) {
     printf("Inputs required for '/'\n");
     exit(1);
   }
-  if(!inputs->next) return new_num(-abs(inputs->typedata.numdata));
   if(inputs->type != NUM || inputs->next->type != NUM) {
     printf("Invalid type for '/' operation\n");
     exit(1);
@@ -135,6 +135,12 @@ nObj make_function(nObj args) {
     temp = temp->next;
   }
   return new_user_func(extractedargs,nargs,clone(args->next,REGULAR),new_closure(scope));
+}
+
+nObj make_macro(nObj args) {
+  nObj result = make_function(args);
+  result->type = USER_MACRO;
+  return result;
 }
 
 nObj nailIf(nObj inputs) {
@@ -228,6 +234,43 @@ nObj defn(nObj inputs) {
   return new_zilch();
 }
 
+nObj defmacro(nObj inputs) {
+  if(!inputs) {
+    puts("1 input expected for defmacro");
+  }
+  nObj fn = make_macro(inputs->next);
+  set(inputs->typedata.symdata,fn);
+  return new_zilch();
+}
+
+nObj createlist(nObj inputs) {
+  nObj result = new_empty_list();
+  result->typedata.head = clone(inputs,REGULAR);
+  return result;
+}
+
+nObj forceEval(nObj inputs) {
+  if(!inputs) {puts("Inputs required");exit(1);}
+  if(inputs->next) {puts("Too many inputs");exit(1);}
+  bool temp = inputs->quoted;
+  inputs->quoted = false; //Muhahaha!!
+  nObj result = eval(inputs,REGULAR);
+  inputs->quoted = temp;
+  return result;
+}
+
+nObj cons(nObj inputs) {
+  if(!inputs) {puts("inputs required");exit(1);}
+  if(!inputs->next) {puts("inputs required");exit(1);}
+  if(inputs->next->next) {puts("too many inputs");exit(1);}
+  if(inputs->next->type != LIST) {puts("list expected for cons");exit(1);}
+  nObj consee = clone(inputs,JUST_CLONE_HEAD);
+  consee->next = clone(inputs->next->typedata.head,REGULAR);
+  nObj result = new_empty_list();
+  result->typedata.head = consee;
+  return result;
+}
+
 void load_stdlib() {
   set("+",new_magic_func(add));
   set("-",new_magic_func(sub));
@@ -239,13 +282,19 @@ void load_stdlib() {
   set("=",new_magic_func(equals));
   set("head",new_magic_func(head));
   set("tail",new_magic_func(tail));
+  set("list",new_magic_func(createlist));
+  set("cons",new_magic_func(cons));
 
   set("set!",new_magic_macro(setsym));
   set("show!",new_magic_macro(show));
   set("enter-namespace",new_magic_macro(enter_namespace));
   set("if",new_magic_macro(nailIf));
   set("lambda",new_magic_macro(make_function));
+  set("\\",new_magic_macro(make_function));
   set("define",new_magic_macro(defn));
+  set("macro",new_magic_macro(make_macro));
+  set("defmacro",new_magic_macro(defmacro));
+  set("eval!",new_magic_macro(forceEval));
 
   set("zilch",new_zilch());
   set("true",new_bool(true));

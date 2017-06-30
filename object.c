@@ -26,6 +26,8 @@ void debug_type(nailType n) {
       puts("ZILCH");break;
     case BOOL:
       puts("BOOL");break;
+    case USER_MACRO:
+      puts("USER_MACRO");break;
   }
 }
 
@@ -110,6 +112,12 @@ nObj new_user_func(char **args, int nargs, nObj code,Environment* closure) {
   return result;
 }
 
+nObj new_user_macro(char** args,int nargs,nObj code,Environment* closure) {
+  nObj result = new_user_func(args,nargs,code,closure);
+  result->type = USER_MACRO;
+  return result;
+}
+
 nObj clone(nObj n,int clone_settings) {
   if(!n) return NULL;
   nObj result = EMPTY;
@@ -130,6 +138,7 @@ nObj clone(nObj n,int clone_settings) {
     case LIST:
       result->typedata.head = clone(n->typedata.head,REGULAR);
       break;
+    case USER_MACRO:
     case USER_FUNC:;
       result->typedata = n->typedata;
       if(clone_settings & CHANGE_OWNERSHIP)  n->typedata.func.ownsenv = false;
@@ -154,6 +163,7 @@ void free_nObj(nObj n) {
     case LIST:
       free_nObj(n->typedata.head);
       break;
+    case USER_MACRO:
     case USER_FUNC:
       if(n->typedata.func.ownsenv) {
         free_nObj(n->typedata.func.code);
@@ -206,6 +216,9 @@ void out_nObj(nObj n) {
     case USER_FUNC:
       printf("[User-defined function]");
       break;
+    case USER_MACRO:
+      printf("[User-defined macro]");
+      break;
   }
   if(!n->next) return;
   putchar(' '); //Items are seperated by spaces
@@ -247,6 +260,9 @@ static void aux_toStr(nObj n,char* result) {
       break;
     case USER_FUNC:
       strcat(result,"[User function]");
+      break;
+    case USER_MACRO:
+      strcat(result,"[User macro]");
       break;
   }
   strcat(result,temp);
