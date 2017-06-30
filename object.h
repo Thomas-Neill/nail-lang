@@ -24,7 +24,6 @@ typedef struct nailObject {
     //USER_FUNC,USER_MACRO
     bool booldata; //BOOL
   } typedata;
-  bool quoted;
 }* nObj;
 
 nObj new_str(const char* c);

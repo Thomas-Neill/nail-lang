@@ -33,7 +33,6 @@ void debug_type(nailType n) {
 
 nObj new_str(const char* c) {
   nObj result = EMPTY;
-  result->quoted = false;
   result->type = STR;
   result->typedata.strdata = strdup(c);
   result->next = NULL;
@@ -42,7 +41,6 @@ nObj new_str(const char* c) {
 
 nObj new_sym(const char* c) {
   nObj result = EMPTY;
-  result->quoted = false;
   result->type = SYM;
   result->typedata.symdata = strdup(c);
   result->next = NULL;
@@ -51,7 +49,6 @@ nObj new_sym(const char* c) {
 
 nObj new_num(float f) {
   nObj result = EMPTY;
-  result->quoted = false;
   result->type = NUM;
   result->typedata.numdata = f;
   result->next = NULL;
@@ -60,7 +57,6 @@ nObj new_num(float f) {
 
 nObj new_bool(bool b) {
   nObj result = EMPTY;
-  result->quoted = false;
   result->type = BOOL;
   result->typedata.booldata = b;
   result->next = NULL;
@@ -69,7 +65,6 @@ nObj new_bool(bool b) {
 
 nObj new_empty_list() {
   nObj result = EMPTY;
-  result->quoted = false;
   result->type = LIST;
   result->typedata.head = NULL;
   result->next = NULL;
@@ -78,7 +73,6 @@ nObj new_empty_list() {
 
 nObj new_zilch() {
   nObj result = EMPTY;
-  result->quoted = false;
   result->type = ZILCH;
   result->next = NULL;
   return result;
@@ -86,7 +80,6 @@ nObj new_zilch() {
 
 nObj new_magic_func(nObj (*func)(nObj)) {
   nObj result = EMPTY;
-  result->quoted = false;
   result->type = MAGIC_FUNC;
   result->typedata.magic_func = func;
   result->next = NULL;
@@ -101,7 +94,6 @@ nObj new_magic_macro(nObj (*func)(nObj)) {
 
 nObj new_user_func(char **args, int nargs, nObj code,Environment* closure) {
   nObj result = EMPTY;
-  result->quoted = false;
   result->type = USER_FUNC;
   result->next = NULL;
   result->typedata.func.argnames = args;
@@ -121,7 +113,6 @@ nObj new_user_macro(char** args,int nargs,nObj code,Environment* closure) {
 nObj clone(nObj n,int clone_settings) {
   if(!n) return NULL;
   nObj result = EMPTY;
-  result->quoted = n->quoted;
   result->type = n->type;
   if(clone_settings & JUST_CLONE_HEAD) {
     result->next = NULL;

@@ -250,13 +250,7 @@ nObj createlist(nObj inputs) {
 }
 
 nObj forceEval(nObj inputs) {
-  if(!inputs) {puts("Inputs required");exit(1);}
-  if(inputs->next) {puts("Too many inputs");exit(1);}
-  bool temp = inputs->quoted;
-  inputs->quoted = false; //Muhahaha!!
-  nObj result = eval(inputs,REGULAR);
-  inputs->quoted = temp;
-  return result;
+  return eval(inputs,REGULAR);
 }
 
 nObj cons(nObj inputs) {
@@ -269,6 +263,10 @@ nObj cons(nObj inputs) {
   nObj result = new_empty_list();
   result->typedata.head = consee;
   return result;
+}
+
+nObj quote(nObj inputs) {
+  return clone(inputs,REGULAR);
 }
 
 void load_stdlib() {
@@ -284,6 +282,7 @@ void load_stdlib() {
   set("tail",new_magic_func(tail));
   set("list",new_magic_func(createlist));
   set("cons",new_magic_func(cons));
+  set("eval!",new_magic_func(forceEval));
 
   set("set!",new_magic_macro(setsym));
   set("show!",new_magic_macro(show));
@@ -294,7 +293,8 @@ void load_stdlib() {
   set("define",new_magic_macro(defn));
   set("macro",new_magic_macro(make_macro));
   set("defmacro",new_magic_macro(defmacro));
-  set("eval!",new_magic_macro(forceEval));
+  set("quote",new_magic_macro(quote));
+  set("'",new_magic_macro(quote));
 
   set("zilch",new_zilch());
   set("true",new_bool(true));

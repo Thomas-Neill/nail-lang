@@ -7,24 +7,20 @@ nObj eval(nObj n,int eval_settings) {
   nObj result;
   int clone_settings = JUST_CLONE_HEAD;
   if(eval_settings & CLONE_CHANGE_OWNERSHIP) clone_settings |= CHANGE_OWNERSHIP;
-  if(n->quoted) {
-    result = clone(n,JUST_CLONE_HEAD);
-  } else {
-    switch(n->type) {
-      case LIST:
-        result = call(n);
-        break;
-      case SYM:
-        result = clone(*(get(n->typedata.symdata,scope)),JUST_CLONE_HEAD);
-        if(result == NULL) {
-          printf("Variable '%s' doesn't exist!\n",n->typedata.symdata);
-          exit(1);
-        }
-        break;
-      default:
-        result = clone(n,JUST_CLONE_HEAD);
-       break;
-     }
+  switch(n->type) {
+    case LIST:
+      result = call(n);
+      break;
+    case SYM:
+      result = clone(*(get(n->typedata.symdata,scope)),JUST_CLONE_HEAD);
+      if(result == NULL) {
+        printf("Variable '%s' doesn't exist!\n",n->typedata.symdata);
+        exit(1);
+      }
+      break;
+    default:
+      result = clone(n,JUST_CLONE_HEAD);
+      break;
   }
   if(eval_settings & JUST_EVAL_HEAD) {
     result->next = NULL;
@@ -36,7 +32,6 @@ nObj eval(nObj n,int eval_settings) {
 
 nObj call(nObj l) {
   nObj func = eval(l->typedata.head,JUST_EVAL_HEAD);
-
   nObj inputs = l->typedata.head->next;
   nObj result,temp;
   switch(func->type) {

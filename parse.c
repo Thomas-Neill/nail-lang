@@ -16,36 +16,31 @@ nObj parse(list tokens) {
     }
     return NULL;
   }
-  nObj result = malloc(sizeof(struct nailObject));
-  result->quoted = false;
+  nObj result;
   Token* head = at(tokens,current);
   current++;
   switch(head->type) {
     case TK_QUOTE:
-      free(result);
-      result = parse(tokens);
-      result->quoted = true;
+      result = new_empty_list();
+      result->typedata.head = new_sym("'");
+      result->typedata.head->next = parse(tokens);
       return result;
     case TK_LPAREN:
-      result->type = LIST;
+      result = new_empty_list();
       unterminated_parens++;
       result->typedata.head = parse(tokens);
       break;
     case TK_RPAREN:
-      free(result);
       unterminated_parens--;
       return NULL;
     case TK_STR:
-      result->type = STR;
-      result->typedata.strdata = strdup((char*)head->value);
+      result = new_str((char*)head->value);
       break;
     case TK_SYM:
-      result->type = SYM;
-      result->typedata.symdata = strdup((char*)head->value);
+      result = new_sym((char*)head->value);
       break;
     case TK_NUM:
-      result->type = NUM;
-      result->typedata.numdata = *((float*)head->value);
+      result = new_num(*((float*)head->value));
       break;
   }
   result->next = parse(tokens);
